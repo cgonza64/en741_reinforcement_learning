@@ -9,7 +9,7 @@ class RLAgent:
     The agent can also be configured to use a simple rule-based policy instead of learning, which is based on the player's
     hand and the dealer's visible card.
     """
-    def __init__(self, rule_based=False, epsilon=0.2, gamma=1.0, num_of_states=204, num_of_actions=2):
+    def __init__(self, rule_based=False, epsilon=0.2, gamma=1.0, num_of_states=204, num_of_actions=2, eps_decay=False):
         """
         Initializes the RL agent.
 
@@ -29,6 +29,13 @@ class RLAgent:
         self.learning_enabled = True
         self.episode_sa = []
         self.episode_r = []
+
+        # epsilon decay parameters
+        self.eps_decay = eps_decay
+        self.decay_step = 1
+        self.decay_episodes = 2000
+        self.eps_max = 0.7
+        self.eps_min = 0.02
         
     def learning_control(self, enabled):
         """
@@ -71,6 +78,16 @@ class RLAgent:
         self.episode_sa.clear()
         self.episode_r.clear()
 
+    def epsilon_decay(self):
+        """
+        Decay function for epsilon to reduce exploration over time.
+        The decay is linear over a number of episodes specified by the decay_episodes
+        attribute, starting from eps_max and decaying down to eps_min.
+        """
+        r = max(0, (self.decay_episodes - self.decay_step) / self.decay_episodes)
+        self.epsilon = self.eps_min + (self.eps_max - self.eps_min) * r
+        self.decay_step += 1
+    
     def e_greedy(self, actions):
         """
         Uses epsilon-greedy action selection to choose an action.
@@ -78,6 +95,10 @@ class RLAgent:
         :param actions (List[int]): Array of integer-encoded actions for the current state.
         :return: Selected action index based on epsilon-greedy strategy.
         """
+        if self.eps_decay:
+            # Decay epsilon over time to reduce exploration as 
+            # the agent learns more about the environment
+            self.epsilon_decay()  
         a_star_idx = np.argmax(actions)
         rng = np.random.default_rng()
         if self.epsilon <= rng.random():
@@ -93,9 +114,9 @@ class RLAgent:
         hand and the dealer's visible card.
 
         :param state (int): The current state of the game, encoded as an integer where:
-                      - The hundreds digit indicates whether the player has a usable ace (1) or not (0).
-                        - The tens digit indicates the dealer's visible card (1-10).
-                        - The units digit indicates the player's current hand total (12-21).
+                            - The hundreds digit indicates whether the player has a usable ace (1) or not (0).
+                            - The tens digit indicates the dealer's visible card (1-10).
+                            - The units digit indicates the player's current hand total (12-21).
         :return: Action (0 for stick, 1 for hit) based on the rules of the policy.
         """
         # Extract the components of the state
