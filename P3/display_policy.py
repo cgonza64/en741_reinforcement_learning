@@ -4,7 +4,7 @@ from matplotlib.patches import FancyArrow
 import numpy as np
 from PIL import Image
 
-def draw_policy_on_game_grid(pi, agent_type='SARSA'):
+def draw_policy_on_game_grid(pi, agent_type='SARSA', eps_decay=False):
     """
     Draws the learned policy on the game grid with directional arrows.
     """
@@ -76,7 +76,7 @@ def draw_policy_on_game_grid(pi, agent_type='SARSA'):
                 linewidth = 1
             
             # Draw rectangle for cell
-            facecolor = 'none' if cell_type in ['I', 'M', 'A', 'B', 'S'] else color
+            facecolor = 'none' if cell_type in ['I', 'M', 'A', 'B', 'S', 'R'] else color
             w = 0.5 if cell_type == 'E' else 1.0
             rect = patches.Rectangle((col, row), w, 1, 
                                      linewidth=linewidth, 
@@ -88,17 +88,29 @@ def draw_policy_on_game_grid(pi, agent_type='SARSA'):
             image = None
             if cell_type == 'I':
                 image = Image.open('D:\\Grad School\\Reinforcment_Learning_S26\\Project3\\game_tokens\\indiana_jones.png')
+                y = col if col < 3 else col - 1  # Draw directional arrow for start location
+                direction_idx = policy[row, y]
+                direction = directions[direction_idx]
+                draw_arrow(ax, col, row, direction, offset=0.6)
             elif cell_type == 'M':  # Museum token
                 image = Image.open('D:\\Grad School\\Reinforcment_Learning_S26\\Project3\\game_tokens\\museum.png')
             elif cell_type == 'A':
                 image = Image.open('D:\\Grad School\\Reinforcment_Learning_S26\\Project3\\game_tokens\\antiquity.png')
             elif cell_type == 'B':
                 image = Image.open('D:\\Grad School\\Reinforcment_Learning_S26\\Project3\\game_tokens\\beta_space.png')
+                y = col if col < 3 else col - 1  # Draw directional arrow for beta space
+                direction_idx = policy[row, y]
+                direction = directions[direction_idx]
+                draw_arrow(ax, col, row, direction, offset=0.6)
             elif cell_type == 'S':
                 image = Image.open('D:\\Grad School\\Reinforcment_Learning_S26\\Project3\\game_tokens\\swamp_space.png')
-            # elif cell_type == 'R':
-            #     image = Image.open('D:\\Grad School\\Reinforcment_Learning_S26\\Project3\\game_tokens\\rope_and_plank_bridge_space.png')
-            elif cell_type == ' ' or cell_type == 'R':
+            elif cell_type == 'R':
+                image = Image.open('D:\\Grad School\\Reinforcment_Learning_S26\\Project3\\game_tokens\\rope_and_plank_bridge_space.png')
+                y = col if col < 3 else col - 1  # Adjust row index for temple boundary
+                direction_idx = policy[row, y]
+                direction = directions[direction_idx]
+                draw_arrow(ax, col, row, direction)
+            elif cell_type == ' ':
                 # Draw directional arrow
                 y = col if col < 3 else col - 1  # Adjust row index for temple boundary
                 direction_idx = policy[row, y]
@@ -119,11 +131,12 @@ def draw_policy_on_game_grid(pi, agent_type='SARSA'):
     ax.set_yticklabels([0, 16, 32, 48, 64, 80][::-1])
     ax.grid(False)
     
-    plt.title('Learned Policy For ' + agent_type + " Agent", fontsize=16, fontweight='bold', pad=20)
+    eps_decay_str = "(with Epsilon Decay)" if eps_decay else ""
+    plt.title('Learned Policy For ' + agent_type + " Agent " + eps_decay_str, fontsize=16, fontweight='bold', pad=20)
     plt.tight_layout()
     plt.show()
 
-def draw_arrow(ax, col, row, direction):
+def draw_arrow(ax, col, row, direction, offset=0.5):
     """
     Draw a directional arrow in the specified cell
     
@@ -133,8 +146,8 @@ def draw_arrow(ax, col, row, direction):
         row: row index
         direction: 'N', 'S', 'E', or 'W'
     """
-    center_x = col + 0.5
-    center_y = row + 0.5
+    center_x = col + offset
+    center_y = row + offset
     arrow_length = 0.3
     
     # Define arrow direction vectors

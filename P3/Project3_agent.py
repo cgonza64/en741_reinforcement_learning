@@ -27,8 +27,8 @@ class RLAgent:
         # epsilon decay parameters
         self.eps_decay = eps_decay
         self.decay_step = 1
-        self.decay_episodes = 2000
-        self.eps_max = 0.7
+        self.decay_episodes = 200
+        self.eps_max = 0.1
         self.eps_min = 0.02
         
     def learning_control(self, enabled):

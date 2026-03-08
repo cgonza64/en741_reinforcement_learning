@@ -12,7 +12,7 @@ class IndianaJonesAdventure:
     def __init__(self):
         self.num_states = 96
         self.action_space = {0: 'N', 1: 'S', 2: 'W', 3: 'E'}
-        self.num_actions = 4
+        self.num_actions = len(self.action_space)
         self.current_state = 0
 
     def get_number_of_states(self):
