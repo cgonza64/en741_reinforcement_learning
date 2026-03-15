@@ -10,25 +10,40 @@ OUTSIDE_BOUNDARY_RIGHT = [15, 31, 47, 63, 79, 95]  # Right boundary when outside
 
 class IndianaJonesAdventure:
     def __init__(self):
+        """ Initializes the Indiana Jones Adventure environment. """
         self.num_states = 96
         self.action_space = {0: 'N', 1: 'S', 2: 'W', 3: 'E'}
         self.num_actions = len(self.action_space)
         self.current_state = 0
 
     def get_number_of_states(self):
+        """ Returns the total number of states in the environment. """
         return self.num_states
 
     def get_number_of_actions(self):
+        """ Returns the total number of actions in the environment. """
         return self.num_actions
 
     def get_state(self):
+        """ Returns the current state of the environment. """
         return self.current_state
     
     def reset(self, start_state=0, es_flag=False):
+        """ Resets the environment to the specified start state (default is 0) 
+            and returns the initial state.
+        """
         self.current_state = start_state
         return start_state
 
     def execute_action(self, action):
+        """ Executes the given action in the environment, updates the current state, 
+            and returns the new state, reward, and game end status.
+            :param action: An integer representing the action to take (0: North, 1: South, 2: West, 3: East).
+            :return: A tuple (new_state, reward, game_end) where:
+                - new_state: The updated state after executing the action.
+                - reward: The reward received for taking the action.
+                - game_end: A boolean indicating whether the game has ended.
+        """
         game_end = False
 
         # Determine next state
@@ -117,5 +132,5 @@ if __name__=='__main__':
     current_st, _, _ = env.execute_action(1)
     assert current_st == 8
 
-    print('The environment works!')
+    print("The environment for the Indiana Jones' Adventure puzzle works!")
 

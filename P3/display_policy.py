@@ -35,11 +35,18 @@ def draw_policy_on_game_grid(pi, agent_type='SARSA', eps_decay=False):
 
     # map the learned policy to a 2D grid format
     policy = map_policy(pi)
+
+    # Generate path from start to museum using the policy
+    path = generate_path_from_policy(pi)
+    path_set = set(path)  # Convert to set for quick lookup
     
     # Draw grid cells
     for row in range(rows):
         for col in range(cols):
             cell_type = grid_layout[row][col]
+            
+            # Check if this cell is on the path
+            is_on_path = (row, col) in path_set
             
             # Determine cell color
             if cell_type == 'I':  # Start location
@@ -86,12 +93,13 @@ def draw_policy_on_game_grid(pi, agent_type='SARSA', eps_decay=False):
             
             # Add arrow or image (if applicable)
             image = None
+            arrow_colors = ['gold', 'orange'] if is_on_path else ['blue', 'darkblue']
             if cell_type == 'I':
                 image = Image.open('D:\\Grad School\\Reinforcment_Learning_S26\\Project3\\game_tokens\\indiana_jones.png')
                 y = col if col < 3 else col - 1  # Draw directional arrow for start location
                 direction_idx = policy[row, y]
                 direction = directions[direction_idx]
-                draw_arrow(ax, col, row, direction, offset=0.6)
+                draw_arrow(ax, col, row, direction, colors=arrow_colors, offset=0.6)
             elif cell_type == 'M':  # Museum token
                 image = Image.open('D:\\Grad School\\Reinforcment_Learning_S26\\Project3\\game_tokens\\museum.png')
             elif cell_type == 'A':
@@ -101,7 +109,7 @@ def draw_policy_on_game_grid(pi, agent_type='SARSA', eps_decay=False):
                 y = col if col < 3 else col - 1  # Draw directional arrow for beta space
                 direction_idx = policy[row, y]
                 direction = directions[direction_idx]
-                draw_arrow(ax, col, row, direction, offset=0.6)
+                draw_arrow(ax, col, row, direction, colors=arrow_colors, offset=0.6)
             elif cell_type == 'S':
                 image = Image.open('D:\\Grad School\\Reinforcment_Learning_S26\\Project3\\game_tokens\\swamp_space.png')
             elif cell_type == 'R':
@@ -109,13 +117,13 @@ def draw_policy_on_game_grid(pi, agent_type='SARSA', eps_decay=False):
                 y = col if col < 3 else col - 1  # Adjust row index for temple boundary
                 direction_idx = policy[row, y]
                 direction = directions[direction_idx]
-                draw_arrow(ax, col, row, direction)
+                draw_arrow(ax, col, row, direction, colors=arrow_colors, offset=0.6)
             elif cell_type == ' ':
                 # Draw directional arrow
                 y = col if col < 3 else col - 1  # Adjust row index for temple boundary
                 direction_idx = policy[row, y]
                 direction = directions[direction_idx]
-                draw_arrow(ax, col, row, direction)
+                draw_arrow(ax, col, row, direction, colors=arrow_colors, offset=0.6)
 
             # Render image
             if image is not None:
@@ -132,11 +140,11 @@ def draw_policy_on_game_grid(pi, agent_type='SARSA', eps_decay=False):
     ax.grid(False)
     
     eps_decay_str = "(with Epsilon Decay)" if eps_decay else ""
-    plt.title('Learned Policy For ' + agent_type + " Agent " + eps_decay_str, fontsize=16, fontweight='bold', pad=20)
+    plt.title('Learned Policy For A ' + agent_type + " Agent " + eps_decay_str, fontsize=20, fontweight='bold', pad=20)
     plt.tight_layout()
     plt.show()
 
-def draw_arrow(ax, col, row, direction, offset=0.5):
+def draw_arrow(ax, col, row, direction, colors=['blue', 'darkblue'], offset=0.5):
     """
     Draw a directional arrow in the specified cell
     
@@ -163,7 +171,7 @@ def draw_arrow(ax, col, row, direction, offset=0.5):
     # Draw arrow
     arrow = FancyArrow(center_x - dx/2, center_y - dy/2, dx, dy,
                       width=0.08, head_width=0.2, head_length=0.15,
-                      fc='blue', ec='darkblue', linewidth=1.5)
+                      fc=colors[0], ec=colors[1], linewidth=1.5)
     ax.add_patch(arrow)
 
 def map_policy(policy):
@@ -183,6 +191,80 @@ def map_policy(policy):
         grid_policy[row, col] = policy[state]
     return grid_policy[::-1, :]  # reverse rows to match top-down grid layout
 
+def generate_path_from_policy(pi):
+    """
+    Generates the path from the start location to the museum by following the policy.
+    
+    Args:
+        pi: 1D array of action indices for each state (length 96)
+    
+    Returns:
+        List of (row, col) tuples representing the path from start to museum
+    """
+    # Grid layout (same as in draw_policy_on_game_grid)
+    grid_layout = [
+        [' ', ' ', ' ', 'E', 'B', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', ' ', 'M'],
+        [' ', 'A', ' ', 'E', ' ', 'R', 'R', 'R', 'R', 'R', 'R', 'R', 'R', 'R', 'R', ' ', ' '],
+        [' ', ' ', ' ', 'E', ' ', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S', ' ', ' '],
+        [' ', ' ', ' ', 'E', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+        [' ', ' ', ' ', 'E', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+        ['I', ' ', ' ', 'E', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+    ]
+
+    policy = map_policy(pi)
+
+    # Start and goal positions
+    start = (5, 0)
+    goal = (0, 16)
+    
+    # Directions: 0=N (up), 1=S (down), 2=W (left), 3=E (right)
+    directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # (drow, dcol)
+    beta = (0, 4)  # Beta state position for reference
+    
+    path = [start]
+    current = start
+    max_steps = 1000  # Prevent infinite loop
+    
+    for _ in range(max_steps):
+        if current == goal:
+            break
+        
+        # Get policy column index
+        row, col = current
+        if col < 3:
+            policy_col = col
+        else:
+            policy_col = col - 1
+        
+        # Ensure within policy bounds
+        if not (0 <= row < 6 and 0 <= policy_col < 16):
+            break  # Invalid state
+        
+        state = (row, policy_col)
+        action = policy[row, policy_col]
+        
+        # Compute new position
+        drow, dcol = directions[action]
+        new_row = row + drow
+        new_col = col + dcol
+        
+        # Check bounds and validity
+        if 0 <= new_row < 6 and 0 <= new_col < 17:
+            cell = grid_layout[new_row][new_col]
+            if cell == 'A':
+                current = beta  # Move to beta state if antiquity is reached
+                path.append(current)
+            elif cell not in ['E']:  # Cannot move to blocked cells
+                current = (new_row, new_col)
+                path.append(current)
+            else:
+                break  # Hit a blocked cell
+        else:
+            break  # Out of bounds
+    
+    return path
+
 if __name__ == "__main__":
     pi = np.random.randint(0, 4, size=96)  # Example random policy for testing
+    # pi = np.load('SARSA_agent_policy.npy')  # Adjust filename as needed
     draw_policy_on_game_grid(pi)

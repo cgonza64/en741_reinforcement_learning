@@ -2,7 +2,9 @@ import numpy as np
 
 class RLAgent:
     """
-    TODO
+    A reinforcement learning agent that can learn to play the Indiana Jones' Adventure game using either SARSA or Q-learning algorithms.
+    The agent maintains a Q-function that estimates the expected return for each state-action pair, and uses an epsilon-greedy strategy 
+    for action selection to balance exploration and exploitation during learning.
     """
     def __init__(self,
                  agent_type='SARSA',
@@ -13,7 +15,16 @@ class RLAgent:
                  epsilon=0.1,
                  eps_decay=False):
         """
-        TODO
+        Initializes the RL agent with the specified parameters and creates an empty Q-function.
+        The Q-function is initialized to zeros for all state-action pairs, and the agent is set to learning mode by default.
+
+        :param agent_type: The type of RL algorithm to use ('SARSA' or 'Q-learning').
+        :param num_of_states: The total number of states in the environment.
+        :param num_of_actions: The total number of actions available to the agent.
+        :param alpha: The learning rate for updating the Q-function.
+        :param gamma: The discount factor for future rewards.
+        :param epsilon: The exploration rate for epsilon-greedy action selection.
+        :param eps_decay: A flag indicating whether to use epsilon decay over time.
         """
         self.agent_type = agent_type
         self.number_of_states = num_of_states
@@ -33,7 +44,10 @@ class RLAgent:
         
     def learning_control(self, enabled):
         """
-        TODO
+        Controls whether the agent is in learning mode or not. If learning is disabled, the agent will not update 
+        its Q-function and will set epsilon to 0 for purely greedy action selection.
+
+        :param enabled: A boolean flag indicating whether to enable learning (True) or disable learning (False).
         """
         self.learning_enabled = enabled
         self.epsilon = 0.0 if not enabled else self.epsilon
@@ -48,7 +62,10 @@ class RLAgent:
 
     def reset(self, eps=0.1, learning_enabled=True):
         """ 
-        TODO
+        Resets the agent's Q-function to zeros and sets the exploration rate and learning mode based on the provided parameters.
+
+        :param eps: The exploration rate to use after resetting (default is 0.1).
+        :param learning_enabled: A flag indicating whether to enable learning after resetting (default is True).
         """
         for i in range(self.number_of_states):
             for j in range(self.number_of_actions):
@@ -99,9 +116,15 @@ class RLAgent:
 
     def update_q(self, state, action, reward, next_state, next_action=None):
         """ 
-        Updates the Q-function using the first-visit Monte Carlo method based on the stored state-action pairs 
-        and rewards for the episode. This method should be called at the end of each episode after all rewards 
-        have been stored.
+        Updates the Q-function using either the SARSA or Q-learning 1-step methods based on the agent's type. 
+        The update is performed only if learning is enabled.
+
+        :param state: The current state before taking the action.
+        :param action: The action taken in the current state.
+        :param reward: The reward received after taking the action.
+        :param next_state: The state resulting from taking the action.
+        :param next_action: The next action to take in the next state (required for SARSA, optional for Q-learning).
+        :return: The next action selected (only used for SARSA). The next action is returned to facilitate the SARSA update in the next step.
         """
         if self.learning_enabled:
             if self.agent_type == 'SARSA' and next_action is None:

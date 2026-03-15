@@ -9,7 +9,7 @@ def plot_learning_curves(x,
                         xlabel="Episode", 
                         ylabel="Return (Total Reward)"):
     """
-    Plots a learning curve.
+    Helper function to plot learning curves.
     
     Args:
         x: List or array of x-coordinates
